@@ -396,8 +396,11 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Own
 *.env
 .*
 *.db
 *.db-shm
 *.db-wal
+[Mm]igrations/**
