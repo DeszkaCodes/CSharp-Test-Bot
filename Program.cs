@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Discord;
 using TestBot.Loggers;
+using TestBot.Events;
 
 namespace TestBot;
 
@@ -15,6 +16,8 @@ class Program
 
         var client = await CreateClient(tokens["main"], BasicLogger.LogToConsole);
 
+        client.MessageReceived += MessageRecieved.CheckForCommand;
+        
         await Task.Delay(-1);
     }
 
