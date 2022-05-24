@@ -7,6 +7,9 @@ using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using TestBot.Handlers;
 using System.Reflection;
+using TestBot.Data;
+using TestBot.Models;
+using TestBot.Services;
 
 namespace TestBot;
 
@@ -30,6 +33,8 @@ class Program
         private set;
     }
 
+    public const string DBPath = "DiscordBot.db";
+
     private static Task Main(string[] args) => new Program().MainAsync(args);
 
     public async Task MainAsync(string[] args)
@@ -38,12 +43,15 @@ class Program
 
         Client = ClientHelper.CreateClient(BasicLogger.LogToConsole);
 
+        Client.MessageReceived += MessageRecieved.AddExperience;
         Client.MessageReceived += MessageRecieved.CheckForCommand;
 
         Services = new ServiceCollection()
             .AddSingleton(this)
             .AddSingleton(Client)
             .AddSingleton(Commands)
+            .AddDbContext<BotContext>()
+            .AddScoped<UserService>()
             .BuildServiceProvider();
 
         await Commands.AddModulesAsync(Assembly.GetEntryAssembly(), Services);
