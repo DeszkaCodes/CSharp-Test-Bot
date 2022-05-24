@@ -3,35 +3,54 @@ using Discord.WebSocket;
 using Discord;
 using TestBot.Loggers;
 using TestBot.Events;
+using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
+using TestBot.Handlers;
+using System.Reflection;
 
 namespace TestBot;
 
 class Program
 {
+    public static DiscordSocketClient? Client
+    {
+        get;
+        private set;
+    }
+
+    public static CommandService Commands
+    {
+        get;
+        private set;
+    } = new CommandService();
+
+    public static ServiceProvider? Services
+    {
+        get;
+        private set;
+    }
+
     private static Task Main(string[] args) => new Program().MainAsync(args);
 
     public async Task MainAsync(string[] args)
     {
         var tokens = GetTokens();
 
-        var client = await CreateClient(tokens["main"], BasicLogger.LogToConsole);
+        Client = ClientHelper.CreateClient(BasicLogger.LogToConsole);
 
-        client.MessageReceived += MessageRecieved.CheckForCommand;
+        Client.MessageReceived += MessageRecieved.CheckForCommand;
+
+        Services = new ServiceCollection()
+            .AddSingleton(this)
+            .AddSingleton(Client)
+            .AddSingleton(Commands)
+            .BuildServiceProvider();
+
+        await Commands.AddModulesAsync(Assembly.GetEntryAssembly(), Services);
+
+        await ClientHelper.StartClient(Client, tokens["main"]);
         
         await Task.Delay(-1);
-    }
-
-    private async Task<DiscordSocketClient> CreateClient(string token, Func<LogMessage, Task>? logger = null)
-    {
-        var client = new DiscordSocketClient();
-
-        if (logger is not null)
-            client.Log += logger;
-
-        await client.LoginAsync(TokenType.Bot, token);
-        await client.StartAsync();
-
-        return client;
     }
 
     private ReadOnlyDictionary<string, string> GetTokens(string tokenEnvPath = "./tokens.env")
